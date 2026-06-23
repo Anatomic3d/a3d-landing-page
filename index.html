@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Anatomic3D - Precisão Cirúrgica em Cada Camada</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Geist:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#dce9ff",
+                    "on-background": "#0d1c2e",
+                    "on-secondary-container": "#00616d",
+                    "on-primary-container": "#a5bdff",
+                    "outline": "#737784",
+                    "primary": "#00327d",
+                    "surface-variant": "#d5e3fc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#004f58",
+                    "primary-fixed-dim": "#b1c5ff",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#434653",
+                    "background": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "outline-variant": "#c3c6d5",
+                    "primary-fixed": "#dae2ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-surface": "#0d1c2e",
+                    "on-secondary-fixed": "#001f24",
+                    "on-tertiary-fixed": "#191c1e",
+                    "surface-dim": "#ccdbf3",
+                    "secondary-fixed-dim": "#00daf3",
+                    "secondary-fixed": "#9cf0ff",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#00419e",
+                    "surface-tint": "#2559bd",
+                    "error-container": "#ffdad6",
+                    "secondary": "#006875",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-container": "#4b4e50",
+                    "tertiary": "#343739",
+                    "surface-container": "#e6eeff",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#001946",
+                    "tertiary-fixed": "#e0e3e5",
+                    "primary-container": "#0047ab",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "inverse-primary": "#b1c5ff",
+                    "secondary-container": "#00e3fd",
+                    "surface-container-highest": "#d5e3fc",
+                    "inverse-surface": "#233144",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#eff4ff",
+                    "on-tertiary-container": "#bcbfc1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "base": "8px",
+                    "container-max": "1440px",
+                    "margin-desktop": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "display-lg-mobile": ["Inter"],
+                    "caption": ["Inter"],
+                    "label-technical": ["Geist"],
+                    "display-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "caption": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "label-technical": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        threejs-scene { display: block; width: 100%; height: 400px; position: relative; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-x-hidden">
+<!-- Custom Element for Three.js -->
+<script>
+        class ThreeJSScene extends HTMLElement {
+            constructor() {
+                super();
+            }
+            connectedCallback() {
+                const src = this.getAttribute('src');
+                if (src) {
+                    const container = this;
+                    // Ensure a unique ID for the script to find
+                    if (!container.id) container.id = 'threejs-container-' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Logic to handle injected code snippets or raw functions
+                    if (src.includes('function')) {
+                         const sceneFunction = new Function('container', 'THREE', src);
+                         this._cleanup = sceneFunction(container, THREE);
+                    } else {
+                        // For predefined animation hooks
+                        this.initScene(container);
+                    }
+                }
+            }
+
+            initScene(container) {
+                const devicePixelRatio = window.devicePixelRatio || 1;
+                const scene = new THREE.Scene();
+                const width = container.clientWidth || 400;
+                const height = container.clientHeight || 400;
+                const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(width, height);
+                renderer.setPixelRatio(devicePixelRatio);
+                container.appendChild(renderer.domElement);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                scene.add(ambientLight);
+
+                const dLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+                dLight1.position.set(5, 10, 7.5);
+                scene.add(dLight1);
+
+                const pLight = new THREE.PointLight(0x0047ab, 0.5);
+                pLight.position.set(-5, -5, -5);
+                scene.add(pLight);
+
+                // Realistic Stylized Heart Model Group
+                const heartGroup = new THREE.Group();
+
+                // Materials
+                const muscleMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xcc3333, 
+                    shininess: 40
+                });
+                const vesselMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xdd4444, 
+                    shininess: 50
+                });
+                const veinMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x3344aa, 
+                    shininess: 40
+                });
+
+                // Base Heart Shape (Ventricles)
+                const baseGeo = new THREE.SphereGeometry(1.5, 32, 32);
+                baseGeo.scale(1, 1.3, 0.8);
+                const base = new THREE.Mesh(baseGeo, muscleMaterial);
+                base.userData = { label: 'Ventrículos' };
+                heartGroup.add(base);
+
+                // Aorta
+                const aortaGeo = new THREE.TorusGeometry(0.8, 0.25, 16, 32, Math.PI);
+                const aorta = new THREE.Mesh(aortaGeo, vesselMaterial);
+                aorta.position.set(-0.3, 1.5, 0);
+                aorta.rotation.z = -Math.PI / 4;
+                aorta.userData = { label: 'Aorta' };
+                heartGroup.add(aorta);
+
+                const aortaTop = new THREE.CylinderGeometry(0.25, 0.25, 1, 16);
+                const aortaExt = new THREE.Mesh(aortaTop, vesselMaterial);
+                aortaExt.position.set(0.3, 2.2, 0);
+                aortaExt.userData = { label: 'Aorta Ascendente' };
+                heartGroup.add(aortaExt);
+
+                // Pulmonary Veins
+                const v1Geo = new THREE.CylinderGeometry(0.2, 0.2, 0.8, 16);
+                const v1 = new THREE.Mesh(v1Geo, veinMaterial);
+                v1.position.set(0.8, 1.2, 0.3);
+                v1.rotation.z = Math.PI / 6;
+                v1.userData = { label: 'Veia Pulmonar' };
+                heartGroup.add(v1);
+
+                // Vena Cava
+                const vcGeo = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
+                const vc = new THREE.Mesh(vcGeo, veinMaterial);
+                vc.position.set(-1.2, 0.5, -0.2);
+                vc.userData = { label: 'Veia Cava' };
+                heartGroup.add(vc);
+
+                scene.add(heartGroup);
+                camera.position.z = 6;
+
+                // Interaction
+                let isDragging = false;
+                let previousMouseX = 0;
+                let previousMouseY = 0;
+
+                const onPointerDown = (x, y) => {
+                    isDragging = true;
+                    previousMouseX = x;
+                    previousMouseY = y;
+                };
+
+                const onPointerMove = (x, y) => {
+                    if (isDragging) {
+                        const deltaX = x - previousMouseX;
+                        const deltaY = y - previousMouseY;
+                        heartGroup.rotation.y += deltaX * 0.01;
+                        heartGroup.rotation.x += deltaY * 0.01;
+                    }
+                    previousMouseX = x;
+                    previousMouseY = y;
+                };
+
+                container.addEventListener('mousedown', (e) => onPointerDown(e.clientX, e.clientY));
+                window.addEventListener('mousemove', (e) => onPointerMove(e.clientX, e.clientY));
+                window.addEventListener('mouseup', () => isDragging = false);
+
+                container.addEventListener('touchstart', (e) => onPointerDown(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+                window.addEventListener('touchmove', (e) => onPointerMove(e.touches[0].clientX, e.touches[0].clientY), { passive: false });
+                window.addEventListener('touchend', () => isDragging = false);
+
+                const animate = () => {
+                    this._raf = requestAnimationFrame(animate);
+                    // Pulsing effect
+                    const scale = 1 + Math.sin(Date.now() * 0.003) * 0.03;
+                    heartGroup.scale.set(scale, scale, scale);
+                    
+                    if (!isDragging) {
+                        heartGroup.rotation.y += 0.005;
+                    }
+                    renderer.render(scene, camera);
+                };
+
+                animate();
+
+                this._cleanup = () => {
+                    cancelAnimationFrame(this._raf);
+                    renderer.dispose();
+                    heartGroup.traverse((obj) => {
+                        if (obj.geometry) obj.geometry.dispose();
+                        if (obj.material) {
+                            if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                            else obj.material.dispose();
+                        }
+                    });
+                };
+            }
+
+            disconnectedCallback() {
+                if (this._cleanup) this._cleanup();
+            }
+        }
+        customElements.define('threejs-scene', ThreeJSScene);
+    </script>
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-on-background w-full top-0 sticky border-b border-outline-variant dark:border-outline z-40 transition-all duration-300">
+<div class="flex justify-between items-center px-4 py-4 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-3">
+<button class="p-2 text-primary hover:bg-surface-variant transition-colors rounded-lg lg:hidden active:scale-95 duration-200" id="menu-btn">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed text-headline-md">precision_manufacturing</span>
+<span class="font-display-lg text-display-lg-mobile tracking-tighter text-primary dark:text-primary-fixed">ANATOMIC3D</span>
+</div>
+</div>
+<nav class="hidden lg:flex items-center gap-8">
+<a class="text-primary dark:text-primary-fixed font-bold font-body-md text-body-md" href="#">Início</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-body-md text-body-md hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-colors px-3 py-1 rounded" href="#">Cirurgiões</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-body-md text-body-md hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-colors px-3 py-1 rounded" href="#">Educação</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant font-body-md text-body-md hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-colors px-3 py-1 rounded" href="#">Modelos</a>
+</nav>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-bold text-label-technical active:scale-95 duration-200 shadow-sm hover:opacity-90 transition-all">
+                CONTATO
+            </button>
+</div>
+</header>
+<!-- NavigationDrawer (Mobile) -->
+<div class="fixed inset-0 bg-black/50 z-50 hidden opacity-0 transition-opacity duration-300" id="drawer-overlay"></div>
+<aside class="fixed inset-y-0 left-0 z-[60] flex flex-col p-6 h-full w-80 rounded-r-xl bg-surface-container-low dark:bg-surface-dim -translate-x-full transition-transform duration-300 shadow-md" id="drawer">
+<div class="flex justify-between items-center mb-8">
+<span class="font-headline-md text-headline-md text-primary">Menu Anatomic3D</span>
+<button class="p-2 rounded-full hover:bg-surface-variant transition-colors" id="close-drawer">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<nav class="flex flex-col gap-4">
+<a class="flex items-center gap-4 p-4 text-primary dark:text-secondary-container bg-surface-variant dark:bg-primary-container/20 rounded-lg font-body-md text-body-md transition-all duration-300" href="#">
+<span class="material-symbols-outlined">home</span> Início
+            </a>
+<a class="flex items-center gap-4 p-4 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed font-body-md text-body-md transition-all duration-300" href="#">
+<span class="material-symbols-outlined">medical_services</span> Cirurgiões
+            </a>
+<a class="flex items-center gap-4 p-4 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed font-body-md text-body-md transition-all duration-300" href="#">
+<span class="material-symbols-outlined">school</span> Educação
+            </a>
+<a class="flex items-center gap-4 p-4 text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed font-body-md text-body-md transition-all duration-300" href="#">
+<span class="material-symbols-outlined">view_in_ar</span> Modelos
+            </a>
+</nav>
+<div class="mt-auto pt-8 border-t border-outline-variant">
+<img alt="Anatomic3D Logo" class="w-32 h-auto mx-auto mb-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4n7xHLxhSqSbDBZDPg1mCG7VGgcUQKTBnDuhgB2bw-h-Cw75LqFDumNSCg-Dq0KyuP_4s73xjnZtxq-5NRsybF8BwaY2W55_V2tiUIu0wEewVd5WNuFKg8OQ6IAJoLMTKuxSkxvbGbp_SfoY_OeaQRcYd8F5N57WCEGXmCvAkKX0WCG8ukTs3tyNNTJmvS0FJ5dUkztUEC2GYjbBEKes8rj1QjJit8ARRpedJ_t9CzJAIDDfDNfxnYFrUBue5AxxxzPT0RGv_iBQ"/>
+<p class="text-center text-caption font-caption text-on-surface-variant">© 2024 Anatomic3D</p>
+</div>
+</aside>
+<main class="w-full">
+<!-- New Interactive 3D Hero Section -->
+<section class="relative bg-surface py-12 md:py-16 overflow-hidden">
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+<div class="flex flex-col gap-6 order-2 lg:order-1">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full w-fit">
+<span class="material-symbols-outlined text-[18px]">3d_rotation</span>
+<span class="text-label-technical font-label-technical uppercase tracking-wider">Inovação Digital</span>
+</div>
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary leading-tight">
+                        Visualize a <span class="text-secondary">Precisão</span> em Tempo Real
+                    </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Explore nossos modelos virtuais realistas, como este coração gerado a partir de exames complexos. A tecnologia que permite o planejamento milimétrico agora ao seu alcance de forma interativa e pulsante.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 mt-4">
+<button class="bg-primary text-on-primary px-10 py-4 rounded-lg font-bold text-body-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                            Iniciar Projeto <span class="material-symbols-outlined">play_circle</span>
+</button>
+</div>
+</div>
+<div class="relative order-1 lg:order-2 group">
+<div class="absolute -inset-4 bg-primary/5 blur-3xl rounded-full"></div>
+<div class="relative rounded-2xl overflow-hidden glass-panel border border-outline-variant/30 shadow-xl bg-transparent">
+
+<div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+<div class="inline-flex items-center gap-2 px-4 py-2 bg-on-background/80 text-on-primary rounded-full backdrop-blur-sm">
+<span class="material-symbols-outlined text-sm animate-pulse">drag_pan</span>
+<span class="text-caption font-medium">Interaja com o modelo: toque e arraste para rotacionar</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Original Hero Section (Now secondary to the 3D experience) -->
+<section class="relative min-h-[70vh] flex items-center pt-8 overflow-hidden bg-background border-t border-outline-variant/20">
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+<div class="flex flex-col gap-6">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full w-fit">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="text-label-technical font-label-technical uppercase tracking-wider">Acurácia Sub-Milimétrica</span>
+</div>
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary leading-tight">
+                        Precisão que <span class="text-secondary">Salva Vidas</span>
+</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Transformamos exames DICOM reais (TC e RM) em modelos anatômicos 3D físicos e digitais de alta fidelidade para planejamento cirúrgico complexo e educação médica avançada.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 mt-4">
+<button class="bg-primary text-on-primary px-10 py-4 rounded-lg font-bold text-body-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                            Solicitar Orçamento <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="border-2 border-secondary text-secondary px-10 py-4 rounded-lg font-bold text-body-md hover:bg-secondary-container transition-all flex items-center justify-center gap-2">
+                            Conhecer Modelos <span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+<div class="flex items-center gap-6 mt-8 pt-8 border-t border-outline-variant">
+<div>
+<p class="text-display-lg-mobile font-bold text-primary">500+</p>
+<p class="text-caption font-caption text-on-surface-variant uppercase">Cirurgias Planejadas</p>
+</div>
+<div class="w-px h-12 bg-outline-variant"></div>
+<div>
+<p class="text-display-lg-mobile font-bold text-primary">99.9%</p>
+<p class="text-caption font-caption text-on-surface-variant uppercase">Precisão Anatômica</p>
+</div>
+</div>
+</div>
+<div class="relative group">
+<div class="absolute -inset-4 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-all duration-500"></div>
+<div class="relative bg-surface rounded-2xl p-4 shadow-2xl border border-outline-variant transform lg:rotate-3 hover:rotate-0 transition-transform duration-500">
+<img class="w-full h-auto rounded-xl object-cover" data-alt="A high-quality 3D render of a human heart with meticulous anatomical detail, showcasing veins, arteries, and chambers. The heart is presented as a clinical medical model on a minimalist sterile pedestal. The lighting is bright and clean, mimicking a professional laboratory setting. The overall aesthetic is high-tech, medical-grade, and sophisticated, using a palette of surgical blues and clinical whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4n7xHLxhSqSbDBZDPg1mCG7VGgcUQKTBnDuhgB2bw-h-Cw75LqFDumNSCg-Dq0KyuP_4s73xjnZtxq-5NRsybF8BwaY2W55_V2tiUIu0wEewVd5WNuFKg8OQ6IAJoLMTKuxSkxvbGbp_SfoY_OeaQRcYd8F5N57WCEGXmCvAkKX0WCG8ukTs3tyNNTJmvS0FJ5dUkztUEC2GYjbBEKes8rj1QjJit8ARRpedJ_t9CzJAIDDfDNfxnYFrUBue5AxxxzPT0RGv_iBQ"/>
+<div class="absolute bottom-8 left-8 right-8 glass-panel p-4 rounded-xl shadow-lg border border-white/50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">view_in_ar</span>
+</div>
+<div>
+<p class="font-bold text-on-surface text-body-md">Modelo Cardíaco Realista</p>
+<p class="text-caption text-on-surface-variant">Impressão em Resina Multicromática</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Surgeons Section (Tactical Planning) -->
+<section class="py-24 bg-surface">
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="text-center max-w-3xl mx-auto mb-16">
+<h2 class="font-headline-md text-display-lg-mobile text-on-background mb-4">Planejamento Tático para Cirurgiões</h2>
+<p class="text-body-md text-on-surface-variant">Reduza o tempo de sala cirúrgica e minimize riscos imprevistos através de simulações físicas antes da primeira incisão.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Feature 1 -->
+<div class="p-8 bg-surface-container-low rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-primary-fixed rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">target</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-3">Redução de Riscos</h3>
+<p class="text-body-md text-on-surface-variant">Identifique estruturas críticas e variações anatômicas complexas em uma réplica exata do paciente.</p>
+</div>
+<!-- Feature 2 -->
+<div class="p-8 bg-surface-container-low rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-secondary-fixed rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-secondary text-3xl">precision_manufacturing</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-3">Guias Cirúrgicos</h3>
+<p class="text-body-md text-on-surface-variant">Desenvolvimento de guias de corte e posicionamento personalizados para maior precisão nos procedimentos.</p>
+</div>
+<!-- Feature 3 -->
+<div class="p-8 bg-surface-container-low rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="w-14 h-14 bg-surface-variant rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">history</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-3">Eficiência Temporal</h3>
+<p class="text-body-md text-on-surface-variant">Estudos mostram redução de até 25% no tempo cirúrgico com o uso de biomodelos 3D.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Education Section -->
+<section class="py-24 bg-on-background text-on-primary">
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div class="order-2 lg:order-1">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-4">
+<div class="rounded-lg overflow-hidden h-48">
+<img class="w-full h-full object-cover" data-alt="A macro photograph of a 3D-printed skull showing complex internal sinus structures. The model is made of a translucent white polymer, lit from within to emphasize the skeletal details. The background is a dark, clinical navy blue, highlighting the intricate texture and precision of the medical print." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdjZcv6DxmxQeYRQCR0vb1RjMztpN3xllimXwShBTkKnCv_3lHbtD1r2ZKp_6Q6rP4h5H1Kce7MtMlXvzhVXlZOu0JLME7dWd0hufPY5wWOwdeVHNNLs_UQnv2GaZPWGJ7ioUtFAFhH1_BuXRpq4Q0RLrP_-IDiy-JovbRMIt1bkwxnWtxIeptSTnJJGHzY9ZPXmKANMqAc1813xH5MQFROvllXXxc5N8UOCQ4IWYbPl1cpwYuxy7AtCcxONPq8YcAl-7AzWtLeKc"/>
+</div>
+<div class="rounded-lg overflow-hidden h-64">
+<img class="w-full h-full object-cover" data-alt="Medical students in white coats observing a 3D printed model of a complex pelvic fracture. The setting is a modern medical university lab with high-tech equipment in the background. The lighting is cool and professional, focusing on the collaborative learning environment and the educational utility of the anatomical models." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIs6hv625Za-yOdryZfh8Mkcx_jnKXCI0PNs_baU-FmQtI591mD7IFIRb-yil0IpmsOwhm_da3GOBw-fh7I0qar3p4Q_bM9LR0hyP7FUTvWM9QYHsW-t8o60QsDp4kULll164QqtJMkr2PCsBsJWncMyrxeeCjTW7h9Z8q1atGF-PEMs8YdolGeMuesxNZVxw4xyQeFOhhhWOXKWiEthjlGdWlSq62mIx3OxV3iiTCW18ze7hvL5mwbDrild_JUce3A7WI8bHdxBA"/>
+</div>
+</div>
+<div class="space-y-4 mt-8">
+<div class="rounded-lg overflow-hidden h-64">
+<img class="w-full h-full object-cover" data-alt="A row of different 3D printed vertebrae models on a glass shelf, each representing a different clinical pathology. The models vary in color from bone-white to deep red for vascular elements. The lighting is soft and even, creating a clean gallery-like display of surgical specimens." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0FoCreSbgcQdoUQ-YgA6s6lkhvMdQEi-2c51boOvATRKfrHyqGBQExXxNOahDEAyyw-TczyUz-joXXFrRoIXIzpnRtF59CZDCHX_eZhvWIQvaSNx_GDQZw5q4_J7ov9k6G8Ch9tmjcF2YjFeQd3solYk66I66XK_ePyvWN_PZSf9ZwlERw3UOYk8zdal_zolXcvoDYDtpWrWVDrdHTTtFLE-DZexyVJwb0TvaT77fzqU6hsjkztTjh3loeKlfl1PrQvlW8xtKdBk"/>
+</div>
+<div class="rounded-lg overflow-hidden h-48">
+<img class="w-full h-full object-cover" data-alt="Close up of a 3D dental model with transparent gums and detailed tooth roots, designed for educational purposes. The model is held by a gloved hand, emphasizing the tactile and handheld nature of the learning tool. Clinical aesthetic with professional blue and white tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTYuLyCtZ3MQl6Ny0jdGTq7P_7A2tY8ymra7v9XIJSdTjqzXY1Yx9AiCJZxtAWaGkN43w5N5FUjq43K3wxGQo9hbjy9oRcJaiT01NR3Ch3xp8hOYF7mvA0H9WkK28bnigxmJTZMucemnEgOLvXdBhXsS7NVBL7Ma5nethO63PeTHU49b3zZN4_l0OX7PjPg9DX28cM8lRtee3l6L59DreiOqX2s9MRDiNFuTw0aGbGZU4_lsfsUAPrjWxPKBP58CFe2ojV2qpUe-I"/>
+</div>
+</div>
+</div>
+</div>
+<div class="order-1 lg:order-2 flex flex-col gap-6">
+<h2 class="font-display-lg text-display-lg-mobile text-primary-fixed leading-tight">O Futuro do Ensino Médico</h2>
+<p class="font-body-lg text-body-lg text-outline-variant">
+                        Substitua materiais cadavéricos de difícil acesso por modelos sintéticos bio-realistas. Nossos modelos permitem treinamento repetitivo de técnicas cirúrgicas em patologias específicas e raras.
+                    </p>
+<ul class="flex flex-col gap-4">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary-fixed">check_circle</span>
+<span class="text-body-md">Texturas diferenciadas para osso, tecido mole e vasos.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary-fixed">check_circle</span>
+<span class="text-body-md">Casos customizados baseados em bibliotecas patológicas reais.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary-fixed">check_circle</span>
+<span class="text-body-md">Durabilidade para múltiplas sessões de treinamento.</span>
+</li>
+</ul>
+<div class="mt-4">
+<button class="bg-primary-container text-on-primary-container px-8 py-3 rounded-lg font-bold hover:bg-primary transition-all">
+                            Explorar Catálogo Educativo
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Gallery Grid Section -->
+<section class="py-24 bg-surface">
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<h2 class="font-headline-md text-display-lg-mobile text-on-background">Galeria de Precisão</h2>
+<p class="text-body-md text-on-surface-variant">Conheça alguns de nossos projetos entregues em diversas especialidades.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full text-label-technical">Todos</button>
+<button class="px-4 py-2 hover:bg-surface-variant rounded-full text-label-technical">Ortopedia</button>
+<button class="px-4 py-2 hover:bg-surface-variant rounded-full text-label-technical">Cardio</button>
+<button class="px-4 py-2 hover:bg-surface-variant rounded-full text-label-technical">Neuro</button>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="col-span-2 row-span-2 group relative overflow-hidden rounded-xl h-[400px]">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A full-size 3D printed human pelvis with a complex fracture repair guide already in place. The pelvis is white and the surgical guide is a contrasting translucent blue. Photographed in a high-tech lab with a soft focus background of 3D printers. Modern, clean, and highly technical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2cOFGvUHuYec8NogT9sX9B1bGuf-H-_CU2UsQ5lLzygAUpUOA5dFX6KDkkdmIAais1ihREnLe7GcMwIb5s3Op_C9WzmzDgarQt-cWVRS5Ma6iCmcsIXe3RFCzOZ5UaEw0imnO4NbeHRl-ygAkIXo9o1ZPB2lnFa8XsyLfshy_xzbngN5f_u7qsMFM_X0O6OuU7OzPqOR36zGdedyaAGYvw5wgAuoldB7hguSyNNjZlmTrIiERY72dijnWj7R_PBup4eoogaMnDA0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+<p class="text-on-primary font-bold">Complex Pelvic Reconstruction</p>
+</div>
+</div>
+<div class="group relative overflow-hidden rounded-xl h-[192px]">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Detail of a 3D printed hand bone structure for orthopedic study, featuring realistic porosity and bone density. Clinical lighting, clean background, medical blue accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYJruEXZxyIebnfX13Ef_XoLq9p-wN3sDjHL2FTKAmBaGipL0co32a5t-sy4oxLmgXePTujA_9XtqfUTTIIrLDKsfNU0GpTwOn-67rPg-6XrcWtDA2QZ12-KQtryl667oyQkVXLfzgOfSNvA6eOrqkbeARjJdVdSWsb34o23zXLl9rv61_d_VE1QQyTUmL_BFgtB8XBsHx9pdRWMl9cnH9-ga7P9e4xCDCoVqgu6LIVbi1CdMnoBn3uGUZQb6XNNk6NaYjiYl5rLs"/>
+</div>
+<div class="group relative overflow-hidden rounded-xl h-[192px]">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A set of custom surgical drilling guides for a spinal surgery, printed in biocompatible clear resin. Sharp focus, professional surgical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzrPCU4QajTM-vh025swi1gdZcPZHmoU04n-JPSgARAwknfVKYs10FiztOTd-opFsvOT4ERaq4kWbVT1X4O_X-II2wK52g4CYA41keGAMbqlQ6KOBkxWhRb8Wb1gpdsCp_jkargFShZxgvgEJFAdCX6LCfYxN17q4zi5CcDCvqJKh-6HdZe2w56POiRuEmNShZfbbpleCsh7Kz9gjDrympnXNdGl1HsmMk_1VhvxDefXlWRK-wA3w84DCRzNVw4YtTya8ItfEPuOs"/>
+</div>
+<div class="group relative overflow-hidden rounded-xl h-[192px]">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A cross-section of a 3D printed kidney model showing the internal vascular system in vibrant red and blue resins. High-contrast medical visualization." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyzq9_SyCS4OPvG1nx7w03icOZTp-K9dyZra9xhmeyE5L7EjVXjobJO0CvS5KRNHPBb8S7smKrEHRv8z2yYEFAiAwcnJRXi4X0XHs21Zy0wrUskPTSjdghJ2j76dM5tWyGQlUpsprmI8zVzhgizUTcLikO6H4aRqNykNi3ov8yeuqk4MbiEqqKb5xKVcUtAHSZBgMQ0M_I3rOKz9FWzwOutUw2urJkM_F_OgyI0-JyT_XxH3e4VNsjVN1FGnG7Pm0FliNbEaydGVM"/>
+</div>
+<div class="group relative overflow-hidden rounded-xl h-[192px]">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="3D printed brain model showing specific cortical regions highlighted for neurosurgical planning. Sophisticated medical technology vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV4-VX9yQZApNXJblibjYzVeqqK-YAPCkWCA51JagJEpv32pakzt9ZMnl64bBQgc1qzJ-zbpzX4v3E7AnQcWWB5aYLbqNMuEyC1Jz5yNobI1K0l2fYOxYqzGrIH0hE_g4h7XR_dDXclzCQ2vK1lcq92sgcYlhvlZI0zWMzDuxtL4qLxoYObIcWOgsgQqLx1Zp8IfJw0JaDIINy0HiBj3tzxiQH9210qGQActG7jA8WtveV1T77G16KIjZ_L3vgjjmKCyDnIrhA4UU"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Social Proof -->
+<section class="py-16 bg-surface-container-low border-y border-outline-variant">
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop text-center">
+<p class="text-label-technical font-label-technical text-on-surface-variant uppercase mb-8 tracking-[0.2em]">Confiança de Instituições Renomadas</p>
+<div class="flex flex-wrap justify-center items-center gap-12 grayscale opacity-60">
+<div class="text-headline-md font-bold text-on-surface-variant">HOSPITAL ALFA</div>
+<div class="text-headline-md font-bold text-on-surface-variant">CENTRO MED-PLUS</div>
+<div class="text-headline-md font-bold text-on-surface-variant">UNI-SAÚDE</div>
+<div class="text-headline-md font-bold text-on-surface-variant">LAB-3D BRASIL</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 relative overflow-hidden">
+<div class="absolute inset-0 bg-primary z-0"></div>
+<div class="container mx-auto px-margin-mobile md:px-margin-desktop relative z-10 text-center">
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-primary mb-6">Pronto para elevar a precisão de sua próxima cirurgia?</h2>
+<p class="text-body-lg text-primary-fixed mb-10 max-w-2xl mx-auto">Nossa equipe técnica está pronta para converter seus exames em soluções tangíveis em menos de 48 horas.</p>
+<button class="bg-secondary-container text-on-secondary-container px-12 py-5 rounded-xl font-extrabold text-headline-md hover:scale-105 active:scale-95 transition-all shadow-2xl">
+                    Solicitar Orçamento Personalizado
+                </button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-on-background dark:bg-surface-container-lowest text-surface-container-lowest dark:text-primary w-full bottom-0">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-12 gap-8 w-full max-w-container-max mx-auto">
+<div class="flex flex-col gap-4">
+<span class="font-headline-md text-headline-md text-surface-bright">ANATOMIC3D</span>
+<p class="font-caption text-caption text-outline-variant max-w-xs">© 2024 Anatomic3D. Precisão cirúrgica em cada camada.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="font-caption text-caption text-outline-variant dark:text-outline hover:text-secondary-container dark:hover:text-primary-container underline transition-opacity duration-200" href="#">Privacidade</a>
+<a class="font-caption text-caption text-outline-variant dark:text-outline hover:text-secondary-container dark:hover:text-primary-container underline transition-opacity duration-200" href="#">Termos de Uso</a>
+<a class="font-caption text-caption text-outline-variant dark:text-outline hover:text-secondary-container dark:hover:text-primary-container underline transition-opacity duration-200" href="#">FAQ</a>
+<a class="font-caption text-caption text-outline-variant dark:text-outline hover:text-secondary-container dark:hover:text-primary-container underline transition-opacity duration-200" href="#">Trabalhe Conosco</a>
+</div>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-surface-variant/10 flex items-center justify-center hover:bg-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-white">share</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-variant/10 flex items-center justify-center hover:bg-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-white">mail</span>
+</a>
+</div>
+</div>
+</footer>
+<script>
+        // Drawer Logic
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-drawer');
+        const drawer = document.getElementById('drawer');
+        const overlay = document.getElementById('drawer-overlay');
+
+        function toggleDrawer() {
+            const isOpen = drawer.classList.contains('translate-x-0');
+            if (isOpen) {
+                drawer.classList.remove('translate-x-0');
+                drawer.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                overlay.classList.remove('opacity-100');
+            } else {
+                drawer.classList.add('translate-x-0');
+                drawer.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('opacity-100'), 10);
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleDrawer);
+        closeBtn.addEventListener('click', toggleDrawer);
+        overlay.addEventListener('click', toggleDrawer);
+
+        // Header Scroll Effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 20) {
+                header.classList.add('shadow-md', 'py-2');
+                header.classList.remove('py-4');
+            } else {
+                header.classList.remove('shadow-md', 'py-2');
+                header.classList.add('py-4');
+            }
+        });
+    </script>
+</body></html>
