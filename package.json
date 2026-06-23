@@ -1,0 +1,14 @@
+{
+  "name": "anatomic3d",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-static.mjs",
+    "dev": "node scripts/serve-static.mjs .",
+    "preview": "npm run build && node scripts/serve-static.mjs dist"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
