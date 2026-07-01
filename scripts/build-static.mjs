@@ -12,6 +12,7 @@ const copiedExtensions = new Set([
   ".jpg",
   ".jpeg",
   ".gif",
+  ".glb",
   ".webp",
   ".svg",
   ".ico",
