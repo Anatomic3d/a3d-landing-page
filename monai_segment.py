@@ -76,26 +76,43 @@ DEFAULT_COLOR = (0.70, 0.70, 0.70, 1.0)  # grey fallback for unknown structures
 
 # ── GLB / glTF export ─────────────────────────────────────────────────────────
 
+# PBR material properties per structure.
+# roughnessFactor: 0=mirror, 1=fully matte.  metallicFactor: 0=plastic, 1=metal.
+STRUCTURE_PBR = {
+    "bones": dict(roughnessFactor=0.65, metallicFactor=0.05),   # dry bone — slight sheen
+    "heart": dict(roughnessFactor=0.55, metallicFactor=0.0),    # wet tissue — softer sheen
+    "lungs": dict(roughnessFactor=0.80, metallicFactor=0.0),    # spongy — very matte
+}
+DEFAULT_PBR = dict(roughnessFactor=0.70, metallicFactor=0.0)
+
+
 def mesh_to_glb(
     mesh: trimesh.Trimesh,
     color_rgba: tuple = DEFAULT_COLOR,
+    pbr: dict | None = None,
 ) -> trimesh.Trimesh:
     """
-    Apply a flat vertex colour to every vertex and return a GLB-ready mesh.
-    GLB (binary glTF 2.0) is the standard for WebXR, iOS AR Quick Look,
-    Android Scene Viewer, HoloLens, Meta Quest, and Sketchfab.
+    Apply a PBR material so the model responds to lighting in model-viewer.
+    Flat vertex colors look washed-out; PBR gives shading, highlights, and
+    surface detail that make anatomy much easier to read.
     """
-    r, g, b, a = [int(c * 255) for c in color_rgba]
-    vertex_colors = np.tile([r, g, b, a], (len(mesh.vertices), 1)).astype(np.uint8)
-    mesh.visual = trimesh.visual.ColorVisuals(
-        mesh=mesh, vertex_colors=vertex_colors
+    pbr = pbr or DEFAULT_PBR
+    material = trimesh.visual.material.PBRMaterial(
+        baseColorFactor=list(color_rgba),
+        roughnessFactor=pbr["roughnessFactor"],
+        metallicFactor=pbr["metallicFactor"],
+        doubleSided=True,   # no culling artefacts on thin structures
     )
+    mesh = mesh.copy()
+    mesh.visual = trimesh.visual.TextureVisuals(material=material)
     return mesh
 
 
-def save_glb(mesh: trimesh.Trimesh, path: str, color_rgba: tuple = DEFAULT_COLOR) -> None:
-    """Colour + export as binary glTF (.glb)."""
-    coloured = mesh_to_glb(mesh.copy(), color_rgba)
+def save_glb(mesh: trimesh.Trimesh, path: str,
+             color_rgba: tuple = DEFAULT_COLOR,
+             pbr: dict | None = None) -> None:
+    """Apply PBR material + export as binary glTF (.glb)."""
+    coloured = mesh_to_glb(mesh, color_rgba, pbr)
     coloured.export(path)
     size_kb = os.path.getsize(path) / 1e3
     print(f"  ✓  GLB saved  → {path}  ({size_kb:.0f} KB)")
@@ -108,25 +125,21 @@ def convert_stl_to_glb(
 ) -> str:
     """
     Standalone STL → GLB conversion.
-    Guesses the colour from the filename if not provided.
+    Guesses colour + PBR properties from the filename if not provided.
     Returns the path to the written GLB.
     """
     mesh = trimesh.load(stl_path, force="mesh")
     if not isinstance(mesh, trimesh.Trimesh):
-        # Some STLs load as a Scene; merge into single mesh
-        mesh = trimesh.util.concatenate(
-            [g for g in mesh.geometry.values()]
-        )
+        mesh = trimesh.util.concatenate(list(mesh.geometry.values()))
 
-    # auto-detect colour from filename
-    if color_rgba is None:
-        name = os.path.splitext(os.path.basename(stl_path))[0].lower()
-        color_rgba = STRUCTURE_COLORS.get(name, DEFAULT_COLOR)
+    name       = os.path.splitext(os.path.basename(stl_path))[0].lower()
+    color_rgba = color_rgba or STRUCTURE_COLORS.get(name, DEFAULT_COLOR)
+    pbr        = STRUCTURE_PBR.get(name, DEFAULT_PBR)
 
     if out_path is None:
         out_path = os.path.splitext(stl_path)[0] + ".glb"
 
-    save_glb(mesh, out_path, color_rgba)
+    save_glb(mesh, out_path, color_rgba, pbr)
     return out_path
 
 
@@ -137,32 +150,69 @@ def write_html_viewer(glb_files: list[str], out_path: str) -> None:
     Self-contained HTML page using Google's <model-viewer> web component.
     Works on desktop and mobile; shows an 'AR' button on Android Chrome
     and iOS Safari (iOS 12+, Safari AR Quick Look).
+
+    Contrast improvements vs the previous version:
+      - Per-structure background chosen to contrast with the mesh colour
+      - environment-image="neutral" gives even, studio-style IBL lighting
+      - exposure tuned per structure so no channel clips or washes out
+      - shadow-softness reduces harsh hard shadows
+      - tone-mapping="agx" improves mid-tone separation
+      - PBR materials (set in save_glb) react to the lighting correctly
+      - bg toggle button lets the user flip between dark/light backgrounds
     """
+    # background that contrasts with each structure colour
+    BG = {
+        "bones": ("#2c2c2c", "#e8e8e8"),   # dark charcoal / light grey
+        "heart": ("#1a1a2e", "#dde8f0"),   # dark navy / pale blue
+        "lungs": ("#1a1a1a", "#f0ece4"),   # near-black / warm white
+    }
+    DEFAULT_BG = ("#222222", "#eeeeee")
+
+    # exposure: bones need a touch more light; lungs are matte so less
+    EXPOSURE = {"bones": "0.72", "heart": "0.85", "lungs": "0.80"}
+
     tabs = ""
     viewers = ""
+    bg_data = []   # list of (dark, light) per viewer
+
     for i, glb in enumerate(glb_files):
-        name    = os.path.splitext(os.path.basename(glb))[0].capitalize()
+        fname   = os.path.splitext(os.path.basename(glb))[0]
+        name    = fname.capitalize()
         rel     = os.path.relpath(glb, os.path.dirname(out_path))
         active  = "active" if i == 0 else ""
         hidden  = "" if i == 0 else 'style="display:none"'
-        tabs    += f'<button class="tab {active}" onclick="show({i})">{name}</button>\n'
+        dark_bg, light_bg = BG.get(fname.lower(), DEFAULT_BG)
+        exposure = EXPOSURE.get(fname.lower(), "1.0")
+        bg_data.append((dark_bg, light_bg))
+
+        tabs += f'<button class="tab {active}" onclick="show({i})">{name}</button>\n'
         viewers += f"""
-    <div class="viewer-wrap" id="viewer{i}" {hidden}>
+    <div class="viewer-wrap" id="viewer{i}" {hidden} data-dark="{dark_bg}" data-light="{light_bg}">
       <model-viewer
         src="{rel}"
         ar
         ar-modes="webxr scene-viewer quick-look"
         camera-controls
         auto-rotate
-        shadow-intensity="1"
-        style="width:100%;height:75vh;background:#1a1a2e">
+        auto-rotate-delay="500"
+        rotation-per-second="20deg"
+        environment-image="neutral"
+        exposure="{exposure}"
+        shadow-intensity="0.6"
+        shadow-softness="0.8"
+        tone-mapping="agx"
+        style="width:100%;height:75vh;background:{dark_bg};--progress-bar-color:#0074D9">
         <button slot="ar-button"
           style="background:#0074D9;color:#fff;border:none;padding:10px 20px;
-                 border-radius:6px;font-size:14px;cursor:pointer;margin:8px">
+                 border-radius:6px;font-size:14px;cursor:pointer;margin:8px;
+                 box-shadow:0 2px 8px rgba(0,0,0,.4)">
           📱 View in AR
         </button>
       </model-viewer>
     </div>"""
+
+    # serialise bg_data for JS
+    bg_json = str(bg_data).replace("'", "\"")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -174,41 +224,105 @@ def write_html_viewer(glb_files: list[str], out_path: str) -> None:
     src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{ background: #1a1a2e; color: #eee; font-family: sans-serif; }}
-    header {{ padding: 16px 24px; background: #16213e;
-              border-bottom: 1px solid #0f3460; }}
-    header h1 {{ font-size: 1.2rem; color: #88ccee; }}
-    header p  {{ font-size: 0.8rem; color: #888; margin-top: 4px; }}
-    .tabs {{ display: flex; gap: 8px; padding: 12px 24px;
-             background: #16213e; flex-wrap: wrap; }}
-    .tab {{ background: #0f3460; color: #ccc; border: none;
-            padding: 8px 20px; border-radius: 6px; cursor: pointer;
-            font-size: 14px; transition: background 0.2s; }}
-    .tab:hover  {{ background: #1a4a80; }}
-    .tab.active {{ background: #0074D9; color: #fff; }}
-    .viewer-wrap {{ padding: 0 24px 24px; }}
-    footer {{ text-align: center; padding: 12px; color: #555; font-size: 12px; }}
+    body {{ background: #111; color: #eee; font-family: system-ui, sans-serif; }}
+
+    header {{
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; background: #1a1a1a;
+      border-bottom: 1px solid #333;
+    }}
+    header h1  {{ font-size: 1.1rem; color: #ddd; font-weight: 600; }}
+    header p   {{ font-size: 0.75rem; color: #888; margin-top: 3px; }}
+
+    .controls {{
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }}
+
+    /* background toggle */
+    .bg-toggle {{
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #aaa; user-select: none; cursor: pointer;
+    }}
+    .bg-toggle input {{ accent-color: #0074D9; cursor: pointer; }}
+
+    .tabs {{
+      display: flex; gap: 6px; padding: 10px 20px;
+      background: #1a1a1a; flex-wrap: wrap;
+      border-bottom: 1px solid #333;
+    }}
+    .tab {{
+      background: #2a2a2a; color: #bbb; border: 1px solid #444;
+      padding: 7px 18px; border-radius: 20px; cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all 0.15s;
+    }}
+    .tab:hover  {{ background: #3a3a3a; color: #eee; }}
+    .tab.active {{ background: #0074D9; color: #fff; border-color: #0074D9; }}
+
+    .viewer-wrap {{ background: #111; }}
+
+    model-viewer {{
+      display: block;
+      --poster-color: transparent;
+    }}
+
+    footer {{
+      text-align: center; padding: 10px;
+      color: #444; font-size: 11px; background: #1a1a1a;
+      border-top: 1px solid #2a2a2a;
+    }}
   </style>
 </head>
 <body>
   <header>
-    <h1>🫀 Medical 3D Viewer</h1>
-    <p>Rotate: drag &nbsp;|&nbsp; Zoom: scroll / pinch &nbsp;|&nbsp;
-       AR: tap "View in AR" on mobile</p>
+    <div>
+      <h1>🫀 Medical 3D Viewer</h1>
+      <p>Rotate: drag &nbsp;·&nbsp; Zoom: scroll / pinch &nbsp;·&nbsp; AR: tap button on mobile</p>
+    </div>
+    <div class="controls">
+      <label class="bg-toggle">
+        <input type="checkbox" id="bgToggle" onchange="toggleBg(this.checked)">
+        Light background
+      </label>
+    </div>
   </header>
-  <div class="tabs">
-    {tabs}
-  </div>
+
+  <div class="tabs">{tabs}</div>
+
   {viewers}
-  <footer>Generated by monai_3d.py &nbsp;·&nbsp;
-    <model-viewer> powered by Google</footer>
+
+  <footer>Generated by monai_3d.py &nbsp;·&nbsp; <model-viewer> by Google</footer>
+
   <script>
+    const bgData   = {bg_json};
+    let   lightMode = false;
+    let   current   = 0;
+
     function show(i) {{
+      current = i;
       document.querySelectorAll('.viewer-wrap').forEach((el, j) => {{
         el.style.display = (i === j) ? '' : 'none';
       }});
       document.querySelectorAll('.tab').forEach((el, j) => {{
         el.classList.toggle('active', i === j);
+      }});
+      applyBg();
+    }}
+
+    function toggleBg(isLight) {{
+      lightMode = isLight;
+      document.body.style.background    = isLight ? '#f5f5f5' : '#111';
+      document.querySelector('header').style.background = isLight ? '#fff'  : '#1a1a1a';
+      document.querySelector('.tabs').style.background  = isLight ? '#fff'  : '#1a1a1a';
+      applyBg();
+    }}
+
+    function applyBg() {{
+      document.querySelectorAll('.viewer-wrap').forEach((el, j) => {{
+        const [dark, light] = bgData[j];
+        const bg = lightMode ? light : dark;
+        el.style.background = bg;
+        const mv = el.querySelector('model-viewer');
+        if (mv) mv.style.background = bg;
       }});
     }}
   </script>
@@ -342,6 +456,129 @@ def save_preview(masks: dict[str, np.ndarray], out_path: str) -> None:
     print(f"  ✓  Preview    → {out_path}")
 
 
+
+# ── Local HTTP server ─────────────────────────────────────────────────────────
+
+def serve_viewer(out_dir: str, port: int = 8000) -> None:
+    """
+    Serve out_dir over HTTP and open viewer.html in the default browser.
+    Blocks until Ctrl-C.  Needed because browsers block file:// GLB loads
+    (CORS policy).
+    """
+    import http.server
+    import socketserver
+    import threading
+    import webbrowser
+
+    abs_dir = os.path.abspath(out_dir)
+
+    # find a free port if the requested one is busy
+    httpd = None
+    for p in range(port, port + 20):
+        try:
+            socketserver.TCPServer.allow_reuse_address = True
+            httpd = socketserver.TCPServer(
+                ("", p),
+                lambda *a, directory=abs_dir, **kw: http.server.SimpleHTTPRequestHandler(
+                    *a, directory=directory, **kw
+                ),
+            )
+            port = p
+            break
+        except OSError:
+            continue
+
+    if httpd is None:
+        print(f"  Could not find a free port. Run manually:\n"
+              f"  cd {abs_dir} && python -m http.server 8000")
+        return
+
+    url = f"http://localhost:{port}/viewer.html"
+    print(f"\n  Serving at {url}")
+    print("  Open that URL on your phone (same Wi-Fi) for the AR button.")
+    print("  Press Ctrl-C to stop.\n")
+    threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nServer stopped.")
+    finally:
+        httpd.shutdown()
+
+
+def _print_serve_hint(out_dir: str, port: int = 8000) -> None:
+    abs_dir = os.path.abspath(out_dir)
+    print(f"\n  viewer.html needs HTTP — browsers block file:// GLB requests.")
+    print(f"  Start the viewer with:")
+    print(f"    python monai_3d.py --serve --out {abs_dir}")
+    print(f"  or manually:")
+    print(f"    cd {abs_dir} && python -m http.server {port}")
+
+
+# ── Vercel deployment ─────────────────────────────────────────────────────────
+
+def write_vercel_config(out_dir: str) -> str:
+    """
+    Write vercel.json into out_dir so that `vercel deploy out_dir` works:
+      - treats the folder as a plain static site (no framework auto-detection)
+      - serves .glb with the correct MIME type + CORS header
+      - rewrites /viewer → /viewer.html (clean URL)
+    """
+    import json
+    config = {
+        "version": 2,
+        "buildCommand": None,
+        "outputDirectory": ".",
+        "headers": [
+            {
+                "source": "/(.*)\.glb",
+                "headers": [
+                    {"key": "Content-Type",                "value": "model/gltf-binary"},
+                    {"key": "Access-Control-Allow-Origin", "value": "*"},
+                    {"key": "Cache-Control",               "value": "public, max-age=31536000, immutable"},
+                ]
+            },
+            {
+                "source": "/(.*)\.html",
+                "headers": [
+                    {"key": "Cache-Control", "value": "no-cache"},
+                ]
+            }
+        ],
+        "rewrites": [
+            {"source": "/viewer", "destination": "/viewer.html"}
+        ]
+    }
+    path = os.path.join(out_dir, "vercel.json")
+    with open(path, "w") as f:
+        json.dump(config, f, indent=2)
+    print(f"  ✓  vercel.json  → {path}")
+    return path
+
+
+def deploy_to_vercel(out_dir: str, prod: bool = False) -> None:
+    """
+    Run `vercel deploy` on out_dir.
+    Requires the Vercel CLI: npm i -g vercel
+    """
+    import subprocess
+    cmd = ["vercel", os.path.abspath(out_dir), "--yes"]
+    if prod:
+        cmd.append("--prod")
+    print(f"\n  Running: {' '.join(cmd)}")
+    print("  (You may be prompted to log in on first run)\n")
+    try:
+        result = subprocess.run(cmd, check=True)
+    except FileNotFoundError:
+        print("  ✗  Vercel CLI not found. Install it with:")
+        print("       npm i -g vercel")
+        print("  Then deploy manually:")
+        print(f"      vercel {os.path.abspath(out_dir)} --yes")
+    except subprocess.CalledProcessError as e:
+        print(f"  ✗  vercel exited with code {e.returncode}")
+
+
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
@@ -382,8 +619,12 @@ examples:
                       help="One or more .stl files to convert to .glb")
 
     # ── shared ────────────────────────────────────────────────────────────
-    parser.add_argument("--out", default="./output_3d",
+    parser.add_argument("--out",   default="./output_3d",
                         help="Output directory (default: ./output_3d)")
+    parser.add_argument("--serve", action="store_true",
+                        help="After export, serve viewer.html over HTTP and open browser")
+    parser.add_argument("--port",  type=int, default=8000,
+                        help="Port for --serve (default 8000)")
 
     args = parser.parse_args()
 
