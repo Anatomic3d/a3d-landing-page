@@ -1,0 +1,13 @@
+<svg width="760" height="560" viewBox="0 0 760 560" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparação entre cortes DICOM e modelo 3D">
+  <rect x="40" y="72" width="260" height="360" rx="26" fill="#FFFFFF" stroke="#DCE5E8" stroke-width="3"/>
+  <rect x="76" y="116" width="188" height="42" rx="8" fill="#E8F3F5"/>
+  <rect x="76" y="186" width="188" height="42" rx="8" fill="#D9EEF2"/>
+  <rect x="76" y="256" width="188" height="42" rx="8" fill="#C9E7ED"/>
+  <rect x="76" y="326" width="188" height="42" rx="8" fill="#BAE0E7"/>
+  <path d="M394 252h74" stroke="#1E88A8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M444 222l30 30-30 30" stroke="#1E88A8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M594 90C672 91 725 157 716 235C706 321 650 443 574 465C499 487 428 394 426 300C424 203 516 89 594 90Z" fill="#E8F3F5" stroke="#0E5A68" stroke-width="6"/>
+  <path d="M552 154C612 172 660 229 664 300C668 371 630 421 580 425C530 429 488 381 482 313C476 244 492 136 552 154Z" fill="#FFFFFF" stroke="#45B7A8" stroke-width="5"/>
+  <path d="M510 205C553 233 590 282 594 338C597 381 573 401 542 381C508 359 489 312 489 273C489 237 490 192 510 205Z" fill="#CFECEF"/>
+  <path d="M470 134L706 398M440 270L690 206M480 438L688 150" stroke="#9DC9D1" stroke-width="2"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg width="900" height="760" viewBox="0 0 900 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Modelo anatômico tridimensional abstrato">
+  <path d="M452 73C572 77 675 166 712 279C749 392 716 536 621 611C527 687 371 695 271 626C170 557 126 413 162 296C198 179 332 69 452 73Z" fill="#E7F2F4"/>
+  <path d="M428 91C529 100 622 177 657 273C693 370 668 489 589 556C510 624 381 633 296 575C211 516 174 395 206 298C238 200 327 82 428 91Z" stroke="#0E5A68" stroke-width="7"/>
+  <path d="M352 170C339 235 340 304 358 370C374 431 409 507 472 539C520 564 574 542 599 496C635 430 602 338 561 280C512 211 436 176 352 170Z" fill="#FFFFFF" stroke="#1E88A8" stroke-width="6"/>
+  <path d="M384 204C427 219 467 257 493 302C520 348 537 412 515 464C502 494 474 509 445 492C407 469 387 419 374 378C358 324 359 262 384 204Z" fill="#CFECEF" stroke="#45B7A8" stroke-width="5"/>
+  <path d="M300 210L650 500M252 310L598 590M298 568L637 234M215 425L700 355" stroke="#9DC9D1" stroke-width="2"/>
+  <g stroke="#0E5A68" stroke-width="4" fill="#F6F9FA">
+    <circle cx="352" cy="170" r="8"/><circle cx="561" cy="280" r="8"/><circle cx="599" cy="496" r="8"/><circle cx="472" cy="539" r="8"/><circle cx="296" cy="575" r="8"/><circle cx="206" cy="298" r="8"/><circle cx="657" cy="273" r="8"/>
+  </g>
+  <g stroke="#45B7A8" stroke-width="3">
+    <path d="M384 204L493 302L515 464L445 492L374 378L384 204Z"/>
+    <path d="M384 204L374 378M493 302L445 492"/>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anatomic3D">
+  <rect width="240" height="240" rx="52" fill="#0E5A68"/>
+  <path d="M120 39L190 79.5V160.5L120 201L50 160.5V79.5L120 39Z" stroke="#F6F9FA" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M120 39V120M190 79.5L120 120M50 79.5L120 120M120 201V120" stroke="#45B7A8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M87 143C104 132 136 132 153 143" stroke="#F6F9FA" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="120" cy="120" r="15" fill="#45B7A8"/>
+</svg>

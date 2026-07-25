@@ -1,0 +1,11 @@
+@media print {
+  .slidev-layout {
+    overflow: hidden !important;
+  }
+
+  .fade,
+  .slidev-vclick-target {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

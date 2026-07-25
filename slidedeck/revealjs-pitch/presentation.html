@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anatomic3D - Pitch 3 minutos</title>
+
+  <!-- Reveal.js core -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <section id="title" class="hero-slide" data-state="hero">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">Pitch de 3 minutos | Centelha 3 Rondônia</p>
+            <h1>Modelos anatômicos personalizados para cirurgias mais previsíveis</h1>
+            <p class="hero-copy">Transformamos CT e MRI em modelos físicos ou digitais para planejamento pré-operatório, com Inteligência Artificial e impressão 3D.</p>
+            <div class="tag-row">
+              <p>Vilhena, RO</p>
+              <p>Inteligência Artificial</p>
+              <p>Modelos Anatômicos Precisos</p>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <img class="hero-logo-image" src="logo.jpeg" alt="Logotipo Anatomic3D">
+          </div>
+        </div>
+        <div class="obs-space" aria-hidden="true"></div>
+      </section>
+
+      <section id="slide-2">
+        <img class="corner-logo" src="logo.jpeg" alt="Logotipo Anatomic3D">
+        <p class="eyebrow">Problema</p>
+        <h2>O exame é tridimensional. O planejamento ainda é, muitas vezes, bidimensional.</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: .96fr 1.04fr; gap: 22px; align-items: stretch;">
+            <div class="statement-panel">
+              <p class="large-statement">Em cirurgias complexas, a incerteza espacial pode aumentar tempo de sala, risco hemorrágico e custo assistencial.</p>
+              <p class="support-copy">O cirurgião precisa antecipar relações entre vasos, ossos, lesões e trajetórias antes do procedimento.</p>
+            </div>
+            <div class="insight-grid">
+              <div class="insight-card">
+                <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                <h3>Incerteza anatômica</h3>
+                <p>Relações espaciais críticas ficam difíceis de visualizar em cortes 2D.</p>
+              </div>
+              <div class="insight-card">
+                <i class="fa-solid fa-droplet" aria-hidden="true"></i>
+                <h3>Risco hemorrágico</h3>
+                <p>Menor previsibilidade sobre vasos e estruturas sensíveis.</p>
+              </div>
+              <div class="insight-card wide">
+                <i class="fa-solid fa-hospital" aria-hidden="true"></i>
+                <h3>Impacto operacional</h3>
+                <p>Decisões que poderiam ser planejadas antes migram para dentro da sala cirúrgica.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="obs-space" aria-hidden="true"></div>
+      </section>
+
+      <section id="slide-3">
+        <img class="corner-logo" src="logo.jpeg" alt="Logotipo Anatomic3D">
+        <p class="eyebrow">Solução</p>
+        <h2>Da imagem médica ao modelo personalizado</h2>
+        <div class="content">
+          <div class="pipeline-row">
+            <div class="process-step">
+              <p class="step-number">1</p>
+              <h3>DICOM</h3>
+              <p>CT ou MRI do paciente.</p>
+            </div>
+            <div class="process-step">
+              <p class="step-number">2</p>
+              <h3>IA + revisão</h3>
+              <p>Segmentação anatômica com controle técnico.</p>
+            </div>
+            <div class="process-step">
+              <p class="step-number">3</p>
+              <h3>Malha 3D</h3>
+              <p>Conversão para STL ou OBJ.</p>
+            </div>
+            <div class="process-step">
+              <p class="step-number">4</p>
+              <h3>Entrega clínica</h3>
+              <p>Modelo físico, digital ou aplicação especializada.</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: .9fr 1.1fr; gap: 30px; align-items: center; margin-top: 28px;">
+            <div class="mesh-panel">
+              <img class="vertebra-image" src="vertebra.png" alt="Modelo anatômico físico de vértebra impresso em 3D">
+            </div>
+            <div>
+              <p class="large-statement compact">A proposta não substitui a decisão clínica. Ela entrega uma representação individual para reduzir incerteza antes da cirurgia.</p>
+              <div class="tag-row dark">
+                <p>Planejamento</p>
+                <p>Treinamento</p>
+                <p>Comunicação da equipe</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="obs-space" aria-hidden="true"></div>
+      </section>
+
+      <section id="slide-4">
+        <img class="corner-logo" src="logo.jpeg" alt="Logotipo Anatomic3D">
+        <p class="eyebrow">Tração técnica e oportunidade</p>
+        <h2>A tecnologia já foi testada ponta a ponta. O fomento acelera a operação.</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div class="proof-panel">
+              <h3>Estágio atual</h3>
+              <ul>
+                <li>Fluxo DICOM, segmentação, Marching Cubes, STL, fatiamento e impressão física executado em casos de teste.</li>
+                <li>Modelos físicos de estruturas ósseas avaliados quanto à fidelidade geométrica.</li>
+                <li>Stack com 3D Slicer, MONAI, TotalSegmentator, MeshLab e Blender.</li>
+              </ul>
+            </div>
+            <div class="proof-panel accent">
+              <h3>Por que agora</h3>
+              <ul>
+                <li>IA reduziu o esforço manual de segmentação.</li>
+                <li>Ferramentas open source diminuem custo de licenciamento.</li>
+                <li>Impressão 3D viabiliza operação regional com escala digital futura.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="metric-strip">
+            <div>
+              <p class="metric-value">15% a 35%</p>
+              <p class="metric-label">potencial de redução de tempo de sala citado na literatura do projeto</p>
+            </div>
+            <div>
+              <p class="metric-value">5+</p>
+              <p class="metric-label">casos piloto como meta nos primeiros 6 meses</p>
+            </div>
+            <div>
+              <p class="metric-value">12 meses</p>
+              <p class="metric-label">para serviço assistido, operação comercial inicial e MVP SaaS</p>
+            </div>
+          </div>
+        </div>
+        <div class="obs-space" aria-hidden="true"></div>
+      </section>
+
+      <section id="slide-5">
+        <img class="corner-logo" src="logo.jpeg" alt="Logotipo Anatomic3D">
+        <p class="eyebrow">Modelo de negócio</p>
+        <h2>Começar como serviço especializado. Escalar como plataforma.</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px;">
+            <div class="business-card">
+              <i class="fa-solid fa-cube" aria-hidden="true"></i>
+              <h3>Por caso</h3>
+              <p>Modelo personalizado para demanda clínica específica.</p>
+              <p class="business-number">R$ 1.500 ticket projetado</p>
+            </div>
+            <div class="business-card">
+              <i class="fa-solid fa-hospital-user" aria-hidden="true"></i>
+              <h3>Institucional</h3>
+              <p>Pacotes mensais com hospitais, clínicas e ensino.</p>
+              <p class="business-number">R$ 6 mil a R$ 15 mil/mês projetados</p>
+            </div>
+            <div class="business-card">
+              <i class="fa-solid fa-cloud" aria-hidden="true"></i>
+              <h3>SaaS pós-projeto</h3>
+              <p>Upload DICOM, modelagem automatizada e entrega digital.</p>
+              <p class="business-number">R$ 30 mil+/mês projetados</p>
+            </div>
+          </div>
+          <div class="roadmap-line">
+            <div>
+              <p class="roadmap-phase">Meses 1-6</p>
+              <p>Serviço assistido e casos piloto regionais.</p>
+            </div>
+            <div>
+              <p class="roadmap-phase">Meses 7-12</p>
+              <p>Primeiros pedidos pagos e MVP do pipeline SaaS.</p>
+            </div>
+            <div>
+              <p class="roadmap-phase">Pós-projeto</p>
+              <p>Entrega digital e expansão nacional.</p>
+            </div>
+          </div>
+        </div>
+        <p class="footnote">Valores são projeções financeiras do projeto, não faturamento realizado.</p>
+        <div class="obs-space" aria-hidden="true"></div>
+      </section>
+
+      <section id="slide-6">
+        <img class="corner-logo" src="logo.jpeg" alt="Logotipo Anatomic3D">
+        <p class="eyebrow">Equipe executora</p>
+        <h2>IA, engenharia de software e computação científica aplicadas à saúde</h2>
+        <div class="content">
+          <div class="team-grid">
+            <div class="team-card">
+              <img src="juliano.png" alt="Foto de Juliano">
+              <div>
+                <h3>Juliano Fischer Naves</h3>
+                <p class="team-role">Doutor em Ciência da Computação</p>
+                <p>Responsável técnico, estratégico, comercial e administrativo; liderança em IA, software, segmentação médica, malhas 3D e arquitetura SaaS.</p>
+              </div>
+            </div>
+            <div class="team-card">
+              <img src="roberto.jpeg" alt="Foto de Roberto Simplício Guimarães">
+              <div>
+                <h3>Roberto Simplício Guimarães</h3>
+                <p class="team-role">Analista de Sistemas e Mestre em Engenharia Nuclear pelo IPEN/USP</p>
+                <p>Apoio técnico-operacional em imagem médica, computação científica, segmentação anatômica, modelagem 3D e controle de qualidade.</p>
+              </div>
+            </div>
+            <div class="team-summary">
+              <p><strong>Complementaridade:</strong> IA + engenharia de software + imagem médica + controle técnico para transformar exames em modelos anatômicos personalizados.</p>
+            </div>
+          </div>
+        </div>
+        <div class="obs-space" aria-hidden="true"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js-plugins@latest/chart/plugin.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1280,
+      height: 720,
+      margin: 0,
+      controls: true,
+      progress: true,
+      slideNumber: false,
+      hash: true,
+      transition: 'slide',
+      center: false,
+      plugins: [ RevealChart ],
+      chart: {
+        defaults: Object.assign({
+          color: 'rgba(0, 0, 0, 0.8)',
+          borderColor: 'rgba(0, 0, 0, 0.8)',
+          devicePixelRatio: 2
+        }, window.location.search.includes('export') ? { animation: false } : {})
+      }
+    });
+  </script>
+</body>
+</html>

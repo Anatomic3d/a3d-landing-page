@@ -1,0 +1,24 @@
+{
+  "name": "anatomic3d-pitch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "slidev slides.md",
+    "build": "slidev build slides.md",
+    "export:pdf": "slidev export slides.md --format pdf --output Anatomic3D-Pitch.pdf",
+    "export:pptx": "slidev export slides.md --format pptx --output Anatomic3D-Pitch.pptx",
+    "export:png": "slidev export slides.md --format png --output exports",
+    "preview": "slidev build slides.md && vite preview dist",
+    "check": "slidev build slides.md && slidev export slides.md --format pdf --output Anatomic3D-Pitch.pdf"
+  },
+  "dependencies": {
+    "@slidev/cli": "^52.2.1",
+    "@slidev/theme-default": "^0.25.0",
+    "playwright-chromium": "^1.54.2",
+    "vue": "^3.5.18"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
